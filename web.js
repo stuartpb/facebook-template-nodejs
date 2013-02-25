@@ -1,6 +1,5 @@
 var async   = require('async')
   , express = require('express')
-  , util    = require('util')
   , path    = require('path')
   , http    = require('http');
 
@@ -49,7 +48,7 @@ http.createServer(app).listen(app.get('port'), function(){
 function render_page(req, res) {
   req.facebook.app(function(app) {
     req.facebook.me(function(user) {
-      res.render('index.ejs', {
+      res.render('index.jade', {
         layout:    false,
         req:       req,
         app:       app,
