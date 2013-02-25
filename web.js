@@ -1,48 +1,39 @@
 var async   = require('async')
-  , express = require('express')
-  , util    = require('util')
-  , path    = require('path')
-  , http    = require('http');
-
+var express = require('express')
+var path    = require('path')
 
 // create an express webserver
 var app = express();
-app.configure(function(){
-  app.set('port', process.env.PORT || 3000);
-  app.use(express.logger('dev'));
-  app.use(express.bodyParser());
-  app.use(express.cookieParser());
-  app.use(express.static(path.join(__dirname, 'public')));
-  // set this to a secret value to encrypt session cookies
-  app.use(express.session({ secret: process.env.SESSION_SECRET || 'secret123' }));
-  app.use(require('faceplate').middleware({
-    app_id: process.env.FACEBOOK_APP_ID,
-    secret: process.env.FACEBOOK_SECRET,
-    scope:  'user_likes,user_photos,user_photo_video_tags'
-  }));
-  app.use(function(req, res, next) {
-    res.locals.host =  req.headers['host'];
-    next();
-  });
-  app.use(function(req, res, next) {
-    res.locals.scheme = req.headers['x-forwarded-proto'] || 'http';
-    next();
-  });
-  app.use(function(req, res, next) {
-    res.locals.url = function(path) {
-      return res.locals.scheme + res.locals.url_no_scheme(path);
-    };
-    next();
-  });
-  app.use(function(req, res, next) {
-    res.locals.url_no_scheme = function(path) {
-      return '://' + res.locals.host + (path || '');
-    };
-    next();
-  });
+
+// trust X-Forwarded-Proto for http(s) protocol in use
+app.set('trust proxy', true);
+
+app.use(express.logger('dev'));
+app.use(express.bodyParser());
+app.use(express.cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+// set this to a secret value to encrypt session cookies
+app.use(express.session({ secret: process.env.SESSION_SECRET || 'secret123' }));
+app.use(require('faceplate').middleware({
+  app_id: process.env.FACEBOOK_APP_ID,
+  secret: process.env.FACEBOOK_SECRET,
+  scope:  'user_likes,user_photos,user_photo_video_tags'
+}));
+app.use(function(req, res, next) {
+  res.locals.url = function(path) {
+    return req.protocol + res.locals.url_no_scheme(path);
+  };
+  next();
+});
+app.use(function(req, res, next) {
+  res.locals.url_no_scheme = function(path) {
+    return '://' + req.host + (path || '');
+  };
+  next();
 });
 
-http.createServer(app).listen(app.get('port'), function(){
+
+app.listen(process.env.PORT || 3000, function(){
   console.log("Express server listening on port " + app.get('port'));
 });
 
@@ -50,7 +41,6 @@ function render_page(req, res) {
   req.facebook.app(function(app) {
     req.facebook.me(function(user) {
       res.render('index.ejs', {
-        layout:    false,
         req:       req,
         app:       app,
         user:      user
