@@ -173,8 +173,7 @@ html(xmlns:fb="http://ogp.me/ns/fb#",lang="en")
         h3 Recent photos
         ul#photos.photos
           each photo in req.photos
-            li(style="background-image: url(" + photo.picture + ");",
-              class=photo.link)
+            li(style="background-image: url(" + photo.picture + ");"))
               a(href=photo.link,target="_top")
 
       .list
